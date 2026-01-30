@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Internet Browser</title>
+    <style>
+        /* Обнуляем всё, чтобы расширение не ломало верстку */
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #000 !important; overflow: hidden; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            position: relative;
+        }
+
+        /* Звезды — выносим на передний план фона */
+        #star-field {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* Чуть выше самого нижнего слоя */
+            pointer-events: none;
+        }
+        
+        .star {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            opacity: 0;
+            animation: twinkle 4s infinite ease-in-out alternate;
+        }
+        @keyframes twinkle { 0% { opacity: 0; } 50% { opacity: 0.4; } 100% { opacity: 0; } }
+
+        .shooting-star {
+            position: absolute;
+            width: 150px; height: 1px;
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 100%);
+            opacity: 0; z-index: 2;
+        }
+        .shooting-star::after {
+            content: ''; position: absolute; right: 0; top: 50%;
+            transform: translateY(-50%); width: 2px; height: 2px;
+            background: #fff; border-radius: 50%;
+            box-shadow: 0 0 5px #fff;
+        }
+        @keyframes shoot {
+            0% { transform: rotate(35deg) translateX(-200px); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: rotate(35deg) translateX(1200px); opacity: 0; }
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 550px;
+            position: relative;
+            z-index: 10;
+            margin-top: -5vh;
+        }
+
+        h1 {
+            font-weight: 200;
+            font-size: 2.2rem;
+            letter-spacing: 10px;
+            margin-bottom: 120px;
+            color: #fff !important;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+
+        .search-wrapper { position: relative; width: 100%; }
+
+        input[type="text"] {
+            width: 100%;
+            border: none;
+            border-bottom: 1px solid #222;
+            padding: 15px 0;
+            font-size: 1.3rem;
+            outline: none;
+            background: transparent !important;
+            color: #fff !important;
+            text-align: center;
+            position: relative;
+            z-index: 5;
+            transition: border-color 0.4s;
+        }
+
+        input[type="text"]:focus { border-bottom: 1px solid #8A2BE2; }
+
+        .placeholder-text {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            color: #444;
+            font-size: 1.1rem;
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.1, 0.7, 0.1, 1);
+            z-index: 3;
+            text-align: center;
+        }
+
+        /* Анимация уезда фразы вниз */
+        input[type="text"]:focus + .placeholder-text,
+        input[type="text"]:not(:placeholder-shown) + .placeholder-text {
+            transform: translateY(45px) scale(0.85);
+            color: #8A2BE2;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="star-field"></div>
+
+    <div class="container">
+        <h1>Internet Browser</h1>
+        <form action="https://www.google.com/search" method="get">
+            <div class="search-wrapper">
+                <input type="text" id="search-input" name="q" placeholder=" " autofocus autocomplete="off">
+                <div id="p-holder" class="placeholder-text">...</div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        /* Весь скрипт в одном блоке, запускается сразу */
+        (function() {
+            const phrases = [
+                "просто начни печатать", "че ищем?", "опять за старое?", "ну давай, удивляй", 
+                "ща всё найдем", "тыц-тыц, печатай здесь", "интернет большой, а ты один", 
+                "ищу смысл жизни (недорого)", "а че, так можно было?", "найди мне котиков", 
+                "хватит прокрастинировать", "че каво, сучара?", "ну привет, кожаный мешок",
+                "я видел твой кэш, нам надо поговорить", "поехали!", "всё будет чики-пуки",
+                "зачем тебе это в 3 часа ночи?", "я соскучился", "поиск кнопки 'бабло'",
+                "не тупи, пиши", "интернет — опасное место, возьми это 🗡️", "ну ты и выдал",
+                "поиск здравого смысла (0 результатов)", "всё будет фиолетово"
+            ];
+
+            const pElement = document.getElementById('p-holder');
+            const sInput = document.getElementById('search-input');
+            const sField = document.getElementById('star-field');
+
+            // 1. Моментально ставим фразу
+            if (pElement) {
+                pElement.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+            }
+
+            // 2. Генерируем звезды (без ожидания загрузки окна)
+            if (sField) {
+                const fragment = document.createDocumentFragment();
+                for (let i = 0; i < 150; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    const size = Math.random() * 2;
+                    star.style.width = size + 'px';
+                    star.style.height = size + 'px';
+                    star.style.left = Math.random() * 100 + '%';
+                    star.style.top = Math.random() * 100 + '%';
+                    star.style.animationDelay = (Math.random() * 5) + 's';
+                    fragment.appendChild(star);
+                }
+                sField.appendChild(fragment);
+            }
+
+            // 3. Падающие звезды
+            function createShootingStar() {
+                if (!sField) return;
+                const ss = document.createElement('div');
+                ss.className = 'shooting-star';
+                ss.style.left = (Math.random() * 50 - 10) + '%';
+                ss.style.top = (Math.random() * 40) + '%';
+                const d = 0.5 + Math.random() * 0.5;
+                ss.style.animation = `shoot ${d}s linear forwards`;
+                sField.appendChild(ss);
+                setTimeout(() => ss.remove(), d * 1000);
+            }
+
+            // Интервал появления звезд
+            setInterval(createShootingStar, 4000);
+
+            // 4. Жесткий фокус для поисковой строки
+            window.onload = () => { if(sInput) sInput.focus(); };
+            sInput.focus(); 
+        })();
+    </script>
+</body>
+</html>
